@@ -1,6 +1,7 @@
 # mastodon_journalists
 
-A wanted to make the list down below a little more accessible.
+A wanted to make the list down below a little more accessible. 
+Don't judge me for the code, I just haphazardly put something together. :)
 
 ## List
 
