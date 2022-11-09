@@ -8,7 +8,7 @@
     </ul>
     <div class="row gx-2">
       <div v-for="(journalist, index) in readyJournalists"
-           class="col-2 gy-2" :key="'journalists-' + page + '-' + index">
+           class="col-6 col-sm-4 col-lg-2 gy-2" :key="'journalists-' + page + '-' + index">
         <div class="card">
           <img class="card-image" :src="journalistInfo[journalist].url" alt="Profile Image">
           <div class="card-body">
