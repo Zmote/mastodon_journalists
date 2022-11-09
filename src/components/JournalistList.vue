@@ -19,7 +19,7 @@
           <img class="card-image" :src="journalistInfo[journalist].url" alt="Profile Image">
           <div class="card-body">
             <h5 class="card-title card-title--size" v-text="journalist"></h5>
-            <a :href="createUrl(journalist)" target="_blank" class="btn btn-default">Go</a>
+            <a :href="createUrl(journalist)" class="btn btn-default">Go</a>
             <!-- Tiny bit risky, but as long as mastodon instances already control what gets put in the summary
              there should be no injection issue, also this is a static website, so...-->
             <details v-if="journalistInfo[journalist].summary">
