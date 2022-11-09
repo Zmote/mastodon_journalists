@@ -92,6 +92,7 @@ export default {
     parseURL(url) {
       let a = document.createElement('a');
       a.href = url;
+      console.log(document.referrer);
       if(this.isValidHost(a.hostname)){
         return a.hostname;
       }
