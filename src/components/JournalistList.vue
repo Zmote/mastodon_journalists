@@ -1,10 +1,21 @@
 <template>
   <div class="container">
     <h1>Mastodon Journalists</h1>
-    <label class="form-label">
-      Enter Your Mastodon Host:
+    <div v-if="!host" class="d-flex justify-content-center form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="flexSwitchCheckChecked" v-model="selectHost">
+      <label class="form-check-label mx-2"  for="flexSwitchCheckChecked">Type | Select</label>
+    </div>
+    <label v-if="!host && selectHost" class="form-label">
+      Select Your Mastodon Host:
+      <select class="form-select" v-model="mastodonHost">
+        <option v-for="(host, index) in hosts" :value="host" :key="'hosts-' + index" v-text="host"></option>
+      </select>
+      This only appears, if ?host=&lt;your-mastodon-host&gt; isn't in the call url, select from available hosts as your base host for appropriate page redirection
+    </label>
+    <label v-if="!host && !selectHost" class="form-label">
+      Enter Your Mastdon Host:
       <input class="form-control" v-model="mastodonHost">
-      This only appears, if the referrer couldn't be parsed automatically, enter your host (without http/https parts, f.ex. mastodon.online for appropriate page redirection
+      This only appears, if ?host=&lt;your-mastodon-host&gt; isn't in the call url, select from available hosts as your base host for appropriate page redirection
     </label>
     <ul class="pagination justify-content-center">
       <li v-for="index in pagedJournalists.length" class="page-item m-0" :key="'nav-' + index">
@@ -47,16 +58,14 @@ const journalists = accountsString.split(";").sort();
 
 export default {
   name: 'JournalistList',
-  props: {
-    msg: String
-  },
   data() {
     return {
       loading: false,
+      selectHost: true,
       page: 0,
       pageSize: 50,
-      mastodonHost: null,
       invalidHosts: ['localhost', 'mastodon-journalists.netlify.app'],
+      mastodonHost: null,
       journalistInfo: journalists.reduce((acc, journalist) => {
         acc[journalist] = {}
         acc[journalist].loaded = false;
@@ -67,6 +76,20 @@ export default {
     }
   },
   computed: {
+    host(){
+      const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+      });
+      return params.host || null;
+    },
+    hosts(){
+      const hostsList = journalists.map((journalist) => {
+        const [, host] = this.getHandleHost(journalist);
+        return host;
+      }).filter(Boolean);
+      hostsList.push(this.host);
+      return Array.from(new Set(hostsList)).sort();
+    },
     readyJournalists() {
       return this.pagedJournalists[this.page].filter((journalist) => {
         return this.journalistInfo[journalist].loaded;
@@ -86,23 +109,11 @@ export default {
     }
   },
   methods: {
-    refererHost(){
-      return this.parseURL(document.referrer);
-    },
-    parseURL(url) {
-      let a = document.createElement('a');
-      a.href = url;
-      console.log(document.referrer);
-      if(this.isValidHost(a.hostname)){
-        return a.hostname;
-      }
-      return null;
-    },
-    isValidHost(host) {
-      return host && !this.invalidHosts.includes(host);
+    getHandleHost(journalist){
+      return journalist.split("@").filter(Boolean);
     },
     createUrl(journalist) {
-      const [targetHandle, targetHost] = journalist.split("@").filter(Boolean);
+      const [targetHandle, targetHost] = this.getHandleHost(journalist);
       const host = this.isValidHost(this.mastodonHost) ? this.mastodonHost : targetHost;
       const handle = this.isValidHost(this.mastodonHost) ? journalist : `@${targetHandle}`;
       return `https://${host}/${handle}`;
@@ -132,11 +143,14 @@ export default {
     updatePage(index) {
       this.page = (index - 1);
       this.loadJournalistImages();
-    }
+    },
+    isValidHost(host) {
+      return host && !this.invalidHosts.includes(host);
+    },
   },
   created() {
     this.loadJournalistImages();
-    this.mastodonHost = this.refererHost();
+    this.mastodonHost = this.host;
   }
 }
 </script>
