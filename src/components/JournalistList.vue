@@ -1,9 +1,15 @@
 <template>
   <div class="container">
     <h1>Mastodon Journalists</h1>
+    <label class="form-label">
+      Enter Your Mastodon Host:
+      <input class="form-control" v-model="mastodonHost">
+      This only appears, if the referrer couldn't be parsed automatically, enter your host (without http/https parts, f.ex. mastodon.online for appropriate page redirection
+    </label>
     <ul class="pagination justify-content-center">
       <li v-for="index in pagedJournalists.length" class="page-item m-0" :key="'nav-' + index">
-        <a class="page-link" :class="{'active': page === (index - 1)}" href="#" @click="updatePage(index)" v-text="index"></a>
+        <a class="page-link" :class="{'active': page === (index - 1)}" href="#" @click="updatePage(index)"
+           v-text="index"></a>
       </li>
     </ul>
     <div class="row gx-2">
@@ -26,7 +32,8 @@
     </div>
     <ul class="pagination mt-4 justify-content-center">
       <li v-for="index in pagedJournalists.length" class="page-item m-0" :key="'nav-' + index">
-        <a class="page-link" :class="{'active': page === (index - 1)}" href="#" @click="updatePage(index)" v-text="index"></a>
+        <a class="page-link" :class="{'active': page === (index - 1)}" href="#" @click="updatePage(index)"
+           v-text="index"></a>
       </li>
     </ul>
   </div>
@@ -43,11 +50,13 @@ export default {
   props: {
     msg: String
   },
-  data(){
+  data() {
     return {
       loading: false,
       page: 0,
-      pageSize : 50,
+      pageSize: 50,
+      mastodonHost: null,
+      invalidHosts: ['localhost', 'mastodon-journalists.netlify.app'],
       journalistInfo: journalists.reduce((acc, journalist) => {
         acc[journalist] = {}
         acc[journalist].loaded = false;
@@ -58,16 +67,16 @@ export default {
     }
   },
   computed: {
-    readyJournalists(){
+    readyJournalists() {
       return this.pagedJournalists[this.page].filter((journalist) => {
         return this.journalistInfo[journalist].loaded;
       })
     },
-    pagedJournalists(){
+    pagedJournalists() {
       const processedJournalists = journalists;
       const pagedJournalists = [];
-      for(let [i, page] = [0, -1]; i < processedJournalists.length; i++){
-        if(!(i % this.pageSize)){
+      for (let [i, page] = [0, -1]; i < processedJournalists.length; i++) {
+        if (!(i % this.pageSize)) {
           page++;
           pagedJournalists[page] = [];
         }
@@ -77,11 +86,27 @@ export default {
     }
   },
   methods: {
-    createUrl(journalist){
-      const [handle, host] = journalist.split("@").filter(Boolean);
-      return `https://${host}/@${handle}`;
+    refererHost(){
+      return this.parseURL(document.referrer);
     },
-    createImageUrl(journalist){
+    parseURL(url) {
+      let a = document.createElement('a');
+      a.href = url;
+      if(this.isValidHost(a.hostname)){
+        return a.hostname;
+      }
+      return null;
+    },
+    isValidHost(host) {
+      return host && !this.invalidHosts.includes(host);
+    },
+    createUrl(journalist) {
+      const [targetHandle, targetHost] = journalist.split("@").filter(Boolean);
+      const host = this.isValidHost(this.mastodonHost) ? this.mastodonHost : targetHost;
+      const handle = this.isValidHost(this.mastodonHost) ? journalist : `@${targetHandle}`;
+      return `https://${host}/${handle}`;
+    },
+    createImageUrl(journalist) {
       const [handle, host] = journalist.split("@").filter(Boolean);
       const jsonUrl = `https://${host}/users/${handle}.json`;
       return fetch(jsonUrl)
@@ -90,51 +115,56 @@ export default {
             this.journalistInfo[journalist].url = json.icon.url;
             this.journalistInfo[journalist].summary = json.summary;
           })
-          .catch(() => {})
+          .catch(() => {
+          })
           .then(() => {
             this.journalistInfo[journalist].loaded = true;
           })
     },
-    loadJournalistImages(){
+    loadJournalistImages() {
       this.pagedJournalists[this.page].forEach((journalist) => {
-        if(this.journalistInfo[journalist].url === placeholder){
+        if (this.journalistInfo[journalist].url === placeholder) {
           this.createImageUrl(journalist);
         }
       })
     },
-    updatePage(index){
+    updatePage(index) {
       this.page = (index - 1);
       this.loadJournalistImages();
     }
   },
-  created(){
+  created() {
     this.loadJournalistImages();
+    this.mastodonHost = this.refererHost();
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.card-image{
+.card-image {
   width: 100%;
   height: auto;
 }
 
-.card-title--size{
+.card-title--size {
   font-size: 12pt;
 }
 
 h3 {
   margin: 40px 0 0;
 }
+
 ul {
   list-style-type: none;
   padding: 0;
 }
+
 li {
   display: inline-block;
   margin: 0 10px;
 }
+
 a {
   color: #42b983;
 }
